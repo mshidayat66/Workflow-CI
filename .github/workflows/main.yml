@@ -35,7 +35,12 @@ jobs:
     - name: Get latest MLflow run_id
       id: get_run_id
       run: |
-        run_id=$(mlflow runs list -n 1 --experiment-name "Personality Classification Non Tuning" | awk 'NR==2 {print $1}')
+        run_id=$(mlflow runs list --experiment-name "Personality Classification Non Tuning" --order-by start_time desc | awk 'NR==2 {print $1}')
+        if [ -z "$run_id" ]; then
+          echo "Failed to get run_id. Available runs:"
+          mlflow runs list --experiment-name "Personality Classification Non Tuning"
+          exit 1
+        fi
         echo "MLFLOW_RUN_ID=$run_id" >> $GITHUB_ENV
         echo "Latest run_id: $run_id"
 
@@ -46,8 +51,8 @@ jobs:
     - name: Upload to GitHub
       uses: actions/upload-artifact@v4
       with:
-        name: model-artifact
-        path: MLProject/model.pkl
+        name: mlartifacts
+        path: MLProject/mlartifacts
 
     - name: Build Docker Model
       run: |
