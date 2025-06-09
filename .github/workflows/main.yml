@@ -36,10 +36,21 @@ jobs:
       id: get_run_id
       run: |
         export MLFLOW_TRACKING_URI=file:./mlruns
+        
+        # Alternative method to get experiment ID
         experiment_name="Personality Classification Non Tuning"
-
-        # Get experiment ID by name (new MLflow command)
-        experiment_id=$(mlflow experiments search --query "name = '$experiment_name'" | grep -oP "(?<=experiment_id: ')[^']+")
+        
+        # Get experiment ID by parsing mlruns directory structure
+        experiment_id=$(ls -1 ./mlruns | grep -E '^[0-9]+$' | while read exp_id; do
+          if [ -f "./mlruns/$exp_id/meta.yaml" ]; then
+            exp_name=$(grep "name:" "./mlruns/$exp_id/meta.yaml" | awk '{print $2}')
+            if [ "$exp_name" = "$experiment_name" ]; then
+              echo $exp_id
+              break
+            fi
+          fi
+        done)
+        
         if [ -z "$experiment_id" ]; then
           echo "Experiment ID not found for '$experiment_name'"
           exit 1
@@ -47,8 +58,8 @@ jobs:
 
         echo "Found experiment_id: $experiment_id"
 
-        # Get latest run ID (alternative method)
-        run_id=$(mlflow runs list --experiment-id "$experiment_id" --order-by "attribute.start_time DESC" --limit 1 | grep -oP "(?<=run_id: ')[^']+")
+        # Get latest run ID
+        run_id=$(ls -1t "./mlruns/$experiment_id" | grep -E '^[a-f0-9]{32}$' | head -n 1)
         if [ -z "$run_id" ]; then
           echo "Failed to get run_id"
           exit 1
