@@ -35,7 +35,7 @@ jobs:
       id: get_run_id
       run: |
         cd MLProject
-        export MLFLOW_TRACKING_URI=file:./mlruns
+        export MLFLOW_TRACKING_URL=file:./mlruns
 
         experiment_name="Personality Classification Non Tuning"
 
@@ -72,7 +72,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: mlartifacts
-        path: MLProject/mlruns
+        path: MLProject/mlruns/${{ env.experiment_id }}/${{ env.MLFLOW_RUN_ID }}/artifacts
 
     - name: Build Docker Model
       run: |
