@@ -42,25 +42,21 @@ jobs:
     - name: Get latest MLflow run_id
       id: get_run_id
       run: |
-        # Set MLFLOW_TRACKING_URI to mlruns inside MLProject
-        export MLFLOW_TRACKING_URI=file:$(pwd)/MLProject/mlruns
-
+        cd MLProject
+        export MLFLOW_TRACKING_URI=file:./mlruns
+    
         experiment_name="Personality Classification Non Tuning"
-        mlruns_dir="$(pwd)/MLProject/mlruns"
 
-        # Find experiment ID by scanning mlruns folder meta.yaml files
-        experiment_id=""
-        for exp_id in $(ls -1 "$mlruns_dir"); do
-          meta_file="$mlruns_dir/$exp_id/meta.yaml"
-          if [ -f "$meta_file" ]; then
-            name_in_meta=$(grep "^name:" "$meta_file" | awk '{print $2}')
-            if [ "$name_in_meta" = "$experiment_name" ]; then
-              experiment_id="$exp_id"
+        experiment_id=$(ls -1 ./mlruns | grep -E '^[0-9]+$' | while read exp_id; do
+          if [ -f "./mlruns/$exp_id/meta.yaml" ]; then
+            exp_name=$(grep "name:" "./mlruns/$exp_id/meta.yaml" | awk '{print $2}')
+            if [ "$exp_name" = "$experiment_name" ]; then
+              echo $exp_id
               break
             fi
           fi
-        done
-
+        done)
+    
         if [ -z "$experiment_id" ]; then
           echo "Experiment ID not found for '$experiment_name'"
           exit 1
@@ -68,8 +64,7 @@ jobs:
 
         echo "Found experiment_id: $experiment_id"
 
-        # Get latest run id in experiment folder
-        run_id=$(ls -1t "$mlruns_dir/$experiment_id" | grep -E '^[a-f0-9]{32}$' | head -n 1)
+        run_id=$(ls -1t "./mlruns/$experiment_id" | grep -E '^[a-f0-9]{32}$' | head -n 1)
         if [ -z "$run_id" ]; then
           echo "Failed to get run_id"
           exit 1
