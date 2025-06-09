@@ -35,20 +35,28 @@ jobs:
     - name: Get latest MLflow run_id
       id: get_run_id
       run: |
-        experiment_id=$(mlflow experiments search | grep "Personality Classification Non Tuning" | awk '{print $1}')
+        export MLFLOW_TRACKING_URI=./mlruns
+        experiment_name="Personality Classification Non Tuning"
+        experiment_id=$(mlflow experiments search | grep "$experiment_name" | awk '{print $1}')
+
         if [ -z "$experiment_id" ]; then
-          echo "Failed to get experiment ID for Personality Classification Non Tuning"
+          echo "Failed to find experiment ID for '$experiment_name'"
           exit 1
         fi
+
+        echo "Found experiment_id: $experiment_id"
+
+        # Get latest run_id
         run_id=$(mlflow runs list --experiment-id $experiment_id --order-by start_time desc | awk 'NR==2 {print $1}')
         if [ -z "$run_id" ]; then
-          echo "Failed to get run_id. Available runs:"
+          echo "Failed to get run_id for experiment $experiment_id"
           mlflow runs list --experiment-id $experiment_id
           exit 1
         fi
-        echo "MLFLOW_RUN_ID=$run_id" >> $GITHUB_ENV
-        echo "Latest run_id: $run_id"
 
+        echo "Latest run_id: $run_id"
+        echo "MLFLOW_RUN_ID=$run_id" >> $GITHUB_ENV
+        
     - name: Install python dependencies
       run: |
         pip install requests
