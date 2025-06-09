@@ -35,7 +35,7 @@ jobs:
     - name: Get latest MLflow run_id
       id: get_run_id
       run: |
-        experiment_id=$(mlflow experiments list | grep "Personality Classification Non Tuning" | awk '{print $1}')
+        experiment_id=$(mlflow experiments search | grep "Personality Classification Non Tuning" | awk '{print $1}')
         if [ -z "$experiment_id" ]; then
           echo "Failed to get experiment ID for Personality Classification Non Tuning"
           exit 1
