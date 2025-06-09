@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Run actions/checkout@v3
-      uses: actions/checkout@v3
+    - name: Run actions/checkout@v4
+      uses: actions/checkout@v4
 
     - name: Set up Python 3.12.7
       uses: actions/setup-python@v5
@@ -44,7 +44,7 @@ jobs:
         pip install requests
 
     - name: Upload to GitHub
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: model-artifact
         path: MLProject/model.pkl
@@ -69,5 +69,5 @@ jobs:
     - name: Post Set up Python 3.12.7
       run: echo "Python teardown done."
 
-    - name: Post Run actions/checkout@v3
+    - name: Post Run actions/checkout@v4
       run: echo "Checkout done."
