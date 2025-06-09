@@ -36,21 +36,21 @@ jobs:
       id: get_run_id
       run: |
         export MLFLOW_TRACKING_URI=./mlruns
+        sleep 2
         experiment_name="Personality Classification Non Tuning"
-        experiment_id=$(mlflow experiments search | grep "$experiment_name" | awk '{print $1}')
+        experiment_id=$(mlflow experiments search --output json | jq -r ".[] | select(.name==\"$experiment_name\") | .experiment_id")
 
         if [ -z "$experiment_id" ]; then
-          echo "Failed to find experiment ID for '$experiment_name'"
+          echo "Experiment ID not found for '$experiment_name'"
           exit 1
         fi
 
         echo "Found experiment_id: $experiment_id"
 
         # Get latest run_id
-        run_id=$(mlflow runs list --experiment-id $experiment_id --order-by start_time desc | awk 'NR==2 {print $1}')
+        run_id=$(mlflow runs list --experiment-id "$experiment_id" --order-by start_time desc | awk 'NR==2 {print $1}')
         if [ -z "$run_id" ]; then
-          echo "Failed to get run_id for experiment $experiment_id"
-          mlflow runs list --experiment-id $experiment_id
+          echo "Failed to get run_id"
           exit 1
         fi
 
