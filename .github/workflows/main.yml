@@ -35,10 +35,11 @@ jobs:
     - name: Get latest MLflow run_id
       id: get_run_id
       run: |
-        export MLFLOW_TRACKING_URI=./mlruns
+        export MLFLOW_TRACKING_URI=file:./mlruns
         experiment_name="Personality Classification Non Tuning"
 
-        experiment_id=$(mlflow experiments list | grep "$experiment_name" | awk '{print $1}')
+        # Get experiment ID by name (new MLflow command)
+        experiment_id=$(mlflow experiments search --query "name = '$experiment_name'" | grep -oP "(?<=experiment_id: ')[^']+")
         if [ -z "$experiment_id" ]; then
           echo "Experiment ID not found for '$experiment_name'"
           exit 1
@@ -46,7 +47,8 @@ jobs:
 
         echo "Found experiment_id: $experiment_id"
 
-        run_id=$(mlflow runs list --experiment-id "$experiment_id" --order-by start_time desc | awk 'NR==2 {print $1}')
+        # Get latest run ID (alternative method)
+        run_id=$(mlflow runs list --experiment-id "$experiment_id" --order-by "attribute.start_time DESC" --limit 1 | grep -oP "(?<=run_id: ')[^']+")
         if [ -z "$run_id" ]; then
           echo "Failed to get run_id"
           exit 1
@@ -68,7 +70,7 @@ jobs:
     - name: Build Docker Model
       run: |
         cd MLProject
-        mlflow models build-docker -m runs:/${{ env.MLFLOW_RUN_ID }}/model -n personality-image
+        mlflow models build-docker -m "runs:/${{ env.MLFLOW_RUN_ID }}/model" -n personality-image
 
     - name: Log in to Docker Hub
       run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
@@ -81,9 +83,3 @@ jobs:
 
     - name: Post Log in to Docker Hub
       run: docker logout
-
-    - name: Post Set up Python 3.12.7
-      run: echo "Python teardown done."
-
-    - name: Post Run actions/checkout@v4
-      run: echo "Checkout done."
