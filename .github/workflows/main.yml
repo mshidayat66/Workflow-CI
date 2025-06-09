@@ -31,22 +31,15 @@ jobs:
         cd MLProject
         python modelling.py
 
-    - name: Debug MLflow experiments
+    - name: Debug artifact locations
       run: |
-        cd MLProject/mlruns
-        echo "List experiment directories:"
-        ls -1
-        echo "Contents of meta.yaml files:"
-        for d in [0-9]*; do
-          echo "Experiment ID: $d"
-          if [ -f "$d/meta.yaml" ]; then
-            echo "meta.yaml content for experiment $d:"
-            cat "$d/meta.yaml"
-          else
-            echo "No meta.yaml in $d"
-          fi
-          echo "---------------------------"
-        done
+        echo "Current directory: $PWD"
+        echo "MLProject contents:"
+        ls -la MLProject/
+        echo "mlruns contents:"
+        ls -la MLProject/mlruns || echo "No mlruns directory"
+        echo "mlartifacts contents:"
+        ls -la MLProject/mlartifacts || echo "No mlartifacts directory"
 
     - name: Get latest MLflow run_id
       id: get_run_id
