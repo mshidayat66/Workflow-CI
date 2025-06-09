@@ -35,7 +35,7 @@ jobs:
     - name: Get latest MLflow run_id
       id: get_run_id
       run: |
-        run_id=$(mlflow runs list -n 1 --experiment-name "Personality-MLFlow" | awk 'NR==2 {print $1}')
+        run_id=$(mlflow runs list -n 1 --experiment-name "Personality Classification Non Tuning" | awk 'NR==2 {print $1}')
         echo "MLFLOW_RUN_ID=$run_id" >> $GITHUB_ENV
         echo "Latest run_id: $run_id"
 
