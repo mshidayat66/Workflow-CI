@@ -31,6 +31,8 @@ jobs:
       run: |
         cd MLProject
         python modelling.py
+        # Verify mlruns was created
+        ls -la ../mlruns || ls -la ./mlruns || echo "No mlruns directory found yet"
 
     - name: Get latest MLflow run_id
       id: get_run_id
