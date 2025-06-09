@@ -35,10 +35,15 @@ jobs:
     - name: Get latest MLflow run_id
       id: get_run_id
       run: |
-        run_id=$(mlflow runs list --experiment-name "Personality Classification Non Tuning" --order-by start_time desc | awk 'NR==2 {print $1}')
+        experiment_id=$(mlflow experiments list | grep "Personality Classification Non Tuning" | awk '{print $1}')
+        if [ -z "$experiment_id" ]; then
+          echo "Failed to get experiment ID for Personality Classification Non Tuning"
+          exit 1
+        fi
+        run_id=$(mlflow runs list --experiment-id $experiment_id --order-by start_time desc | awk 'NR==2 {print $1}')
         if [ -z "$run_id" ]; then
           echo "Failed to get run_id. Available runs:"
-          mlflow runs list --experiment-name "Personality Classification Non Tuning"
+          mlflow runs list --experiment-id $experiment_id
           exit 1
         fi
         echo "MLFLOW_RUN_ID=$run_id" >> $GITHUB_ENV
