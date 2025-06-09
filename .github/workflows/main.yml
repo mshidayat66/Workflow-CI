@@ -30,8 +30,14 @@ jobs:
       run: |
         cd MLProject
         python modelling.py
-        # Verify mlruns was created inside MLProject
-        ls -la ./mlruns || echo "No mlruns directory found yet"
+        echo "Current directory:"
+        pwd
+
+        echo "List mlruns folder in current dir:"
+        ls -la ./mlruns || echo "No mlruns here"
+
+        echo "List mlruns folder in parent dir:"
+        ls -la ../mlruns || echo "No mlruns there"
 
     - name: Get latest MLflow run_id
       id: get_run_id
