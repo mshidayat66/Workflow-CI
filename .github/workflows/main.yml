@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Run actions/checkout@v4
+    - name: Checkout repo
       uses: actions/checkout@v4
 
     - name: Set up Python 3.12.7
@@ -18,41 +18,43 @@ jobs:
       with:
         python-version: 3.12.7
 
-    - name: Check Env
+    - name: Check Python and pip versions
       run: |
         python --version
         pip --version
 
     - name: Install dependencies
-      run: |
-        pip install -r MLProject/requirements.txt
+      run: pip install -r MLProject/requirements.txt
 
     - name: Run mlflow project
       run: |
         cd MLProject
         python modelling.py
-        # Verify mlruns was created
-        ls -la ../mlruns || ls -la ./mlruns || echo "No mlruns directory found yet"
+        # Verify mlruns was created inside MLProject
+        ls -la ./mlruns || echo "No mlruns directory found yet"
 
     - name: Get latest MLflow run_id
       id: get_run_id
       run: |
-        export MLFLOW_TRACKING_URI=file:./mlruns
-        
-        # Alternative method to get experiment ID
+        # Set MLFLOW_TRACKING_URI to mlruns inside MLProject
+        export MLFLOW_TRACKING_URI=file:$(pwd)/MLProject/mlruns
+
         experiment_name="Personality Classification Non Tuning"
-        
-        # Get experiment ID by parsing mlruns directory structure
-        experiment_id=$(ls -1 ./mlruns | grep -E '^[0-9]+$' | while read exp_id; do
-          if [ -f "./mlruns/$exp_id/meta.yaml" ]; then
-            exp_name=$(grep "name:" "./mlruns/$exp_id/meta.yaml" | awk '{print $2}')
-            if [ "$exp_name" = "$experiment_name" ]; then
-              echo $exp_id
+        mlruns_dir="$(pwd)/MLProject/mlruns"
+
+        # Find experiment ID by scanning mlruns folder meta.yaml files
+        experiment_id=""
+        for exp_id in $(ls -1 "$mlruns_dir"); do
+          meta_file="$mlruns_dir/$exp_id/meta.yaml"
+          if [ -f "$meta_file" ]; then
+            name_in_meta=$(grep "^name:" "$meta_file" | awk '{print $2}')
+            if [ "$name_in_meta" = "$experiment_name" ]; then
+              experiment_id="$exp_id"
               break
             fi
           fi
-        done)
-        
+        done
+
         if [ -z "$experiment_id" ]; then
           echo "Experiment ID not found for '$experiment_name'"
           exit 1
@@ -60,8 +62,8 @@ jobs:
 
         echo "Found experiment_id: $experiment_id"
 
-        # Get latest run ID
-        run_id=$(ls -1t "./mlruns/$experiment_id" | grep -E '^[a-f0-9]{32}$' | head -n 1)
+        # Get latest run id in experiment folder
+        run_id=$(ls -1t "$mlruns_dir/$experiment_id" | grep -E '^[a-f0-9]{32}$' | head -n 1)
         if [ -z "$run_id" ]; then
           echo "Failed to get run_id"
           exit 1
@@ -69,12 +71,11 @@ jobs:
 
         echo "Latest run_id: $run_id"
         echo "MLFLOW_RUN_ID=$run_id" >> $GITHUB_ENV
-        
-    - name: Install python dependencies
-      run: |
-        pip install requests
 
-    - name: Upload to GitHub
+    - name: Install additional python dependencies
+      run: pip install requests
+
+    - name: Upload MLflow artifacts
       uses: actions/upload-artifact@v4
       with:
         name: mlartifacts
@@ -88,11 +89,11 @@ jobs:
     - name: Log in to Docker Hub
       run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-    - name: 🏷Tag Docker Image
+    - name: Tag Docker Image
       run: docker tag personality-image ${{ secrets.DOCKERHUB_USERNAME }}/personality-image:latest
 
     - name: Push Docker Image
       run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/personality-image:latest
 
-    - name: Post Log in to Docker Hub
+    - name: Log out Docker Hub
       run: docker logout
