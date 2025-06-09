@@ -53,19 +53,19 @@ jobs:
       run: |
         cd MLProject
         export MLFLOW_TRACKING_URI=file:./mlruns
-    
+
         experiment_name="Personality Classification Non Tuning"
 
         experiment_id=$(ls -1 ./mlruns | grep -E '^[0-9]+$' | while read exp_id; do
           if [ -f "./mlruns/$exp_id/meta.yaml" ]; then
-            exp_name=$(grep "name:" "./mlruns/$exp_id/meta.yaml" | awk '{print $2}')
+            exp_name=$(grep "^name:" "./mlruns/$exp_id/meta.yaml" | cut -d ':' -f2- | xargs)
             if [ "$exp_name" = "$experiment_name" ]; then
               echo $exp_id
               break
             fi
           fi
         done)
-    
+
         if [ -z "$experiment_id" ]; then
           echo "Experiment ID not found for '$experiment_name'"
           exit 1
