@@ -30,14 +30,23 @@ jobs:
       run: |
         cd MLProject
         python modelling.py
-        echo "Current directory:"
-        pwd
 
-        echo "List mlruns folder in current dir:"
-        ls -la ./mlruns || echo "No mlruns here"
-
-        echo "List mlruns folder in parent dir:"
-        ls -la ../mlruns || echo "No mlruns there"
+    - name: Debug MLflow experiments
+      run: |
+        cd MLProject/mlruns
+        echo "List experiment directories:"
+        ls -1
+        echo "Contents of meta.yaml files:"
+        for d in [0-9]*; do
+          echo "Experiment ID: $d"
+          if [ -f "$d/meta.yaml" ]; then
+            echo "meta.yaml content for experiment $d:"
+            cat "$d/meta.yaml"
+          else
+            echo "No meta.yaml in $d"
+          fi
+          echo "---------------------------"
+        done
 
     - name: Get latest MLflow run_id
       id: get_run_id
