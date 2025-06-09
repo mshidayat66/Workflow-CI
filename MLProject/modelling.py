@@ -4,6 +4,7 @@ import mlflow.sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
+from mlflow.models.signature import infer_signature
 
 df = pd.read_csv('personality_dataset_preprocessing.csv')
 
@@ -30,8 +31,19 @@ with mlflow.start_run() as run:
     mlflow.log_metric("recall", recall)
     mlflow.log_metric("f1_score", f1)
 
-    # Log the model itself
-    mlflow.sklearn.log_model(rf, "model")
+    # Buat signature model menggunakan infer_signature
+    signature = infer_signature(X_train, rf.predict(X_train))
+
+    # Contoh input (ambil 5 baris dari X_train)
+    input_example = X_train.head(5)
+
+    # Log model dengan signature dan input_example
+    mlflow.sklearn.log_model(
+        sk_model=rf,
+        artifact_path="model",
+        signature=signature,
+        input_example=input_example
+    )
 
     print(f"Akurasi: {accuracy}")
     print(f"Precision: {precision}")
