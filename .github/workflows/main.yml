@@ -1,0 +1,73 @@
+name: CI - MLFlow
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  train_model:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Run actions/checkout@v3
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.12.7
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.12.7
+
+    - name: Check Env
+      run: |
+        python --version
+        pip --version
+
+    - name: Install dependencies
+      run: |
+        pip install -r MLProject/requirements.txt
+
+    - name: Run mlflow project
+      run: |
+        cd MLProject
+        mlflow run . --env-manager=local
+
+    - name: Get latest MLflow run_id
+      id: get_run_id
+      run: |
+        run_id=$(mlflow runs list -n 1 --experiment-name "Personality-MLFlow" | awk 'NR==2 {print $1}')
+        echo "MLFLOW_RUN_ID=$run_id" >> $GITHUB_ENV
+        echo "Latest run_id: $run_id"
+
+    - name: Install python dependencies
+      run: |
+        pip install requests
+
+    - name: Upload to GitHub
+      uses: actions/upload-artifact@v3
+      with:
+        name: model-artifact
+        path: MLProject/model.pkl
+
+    - name: Build Docker Model
+      run: |
+        cd MLProject
+        mlflow models build-docker -m runs:/${{ env.MLFLOW_RUN_ID }}/model -n personality-image
+
+    - name: Log in to Docker Hub
+      run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+    - name: 🏷Tag Docker Image
+      run: docker tag personality-image ${{ secrets.DOCKERHUB_USERNAME }}/personality-image:latest
+
+    - name: Push Docker Image
+      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/personality-image:latest
+
+    - name: Post Log in to Docker Hub
+      run: docker logout
+
+    - name: Post Set up Python 3.12.7
+      run: echo "Python teardown done."
+
+    - name: Post Run actions/checkout@v3
+      run: echo "Checkout done."
