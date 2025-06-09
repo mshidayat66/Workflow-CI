@@ -55,6 +55,7 @@ jobs:
         fi
 
         echo "Found experiment_id: $experiment_id"
+        echo "experiment_id=$experiment_id" >> $GITHUB_ENV
 
         run_id=$(ls -1t "./mlruns/$experiment_id" | grep -E '^[a-f0-9]{32}$' | head -n 1)
         if [ -z "$run_id" ]; then
