@@ -68,6 +68,11 @@ jobs:
     - name: Install additional python dependencies
       run: pip install requests
 
+    - name: Debug artifacts path
+      run: |
+        echo "Checking contents of: MLProject/mlruns/${{ env.experiment_id }}/${{ env.MLFLOW_RUN_ID }}/artifacts"
+        ls -R MLProject/mlruns/${{ env.experiment_id }}/${{ env.MLFLOW_RUN_ID }}/artifacts || echo "Artifacts not found"
+
     - name: Upload MLflow artifacts
       uses: actions/upload-artifact@v4
       with:
